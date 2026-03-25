@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silent Flames — For the Voices Behind the Shadows</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Lora:ital,wght@0,400;1,400&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --warm-gold: #D4A574;
+      --deep-shadow: #1a0e08;
+      --soft-amber: #C8956C;
+      --cream: #F5E6D3;
+      --whisper: #E8D5C0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      overflow-y: scroll;
+    }
+
+    body {
+      background: var(--deep-shadow);
+      color: var(--cream);
+      font-family: 'Cormorant Garamond', serif;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    /* ─── THREE.JS CANVAS ─── */
+    #three-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ─── SECTIONS ─── */
+    section {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* ─── HERO ─── */
+    #hero {
+      flex-direction: column;
+      text-align: center;
+      background: radial-gradient(ellipse at 50% 50%, rgba(26,14,8,0.7) 0%, rgba(26,14,8,0.3) 40%, transparent 70%);
+    }
+
+    #hero h1 {
+      font-size: clamp(2.5rem, 7vw, 6rem);
+      font-weight: 300;
+      letter-spacing: 0.15em;
+      color: var(--warm-gold);
+      opacity: 0;
+      animation: fadeRise 2.5s ease-out 0.5s forwards;
+      text-shadow: 0 0 60px rgba(212,165,116,0.4), 0 2px 30px rgba(0,0,0,0.8);
+    }
+
+    #hero .subtitle {
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+      color: var(--soft-amber);
+      opacity: 0;
+      animation: fadeRise 2s ease-out 1.5s forwards;
+      margin-top: 1rem;
+      letter-spacing: 0.08em;
+    }
+
+    #hero .scroll-hint {
+      position: absolute;
+      bottom: 2rem;
+      opacity: 0;
+      animation: fadeRise 2s ease-out 3s forwards;
+      font-size: 0.85rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(200,149,108,0.4);
+    }
+
+    #hero .scroll-hint::after {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--soft-amber), transparent);
+      margin: 0.8rem auto 0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* ─── POEM SECTION ─── */
+    #poem {
+      flex-direction: column;
+      text-align: center;
+      background: radial-gradient(ellipse at 50% 50%, rgba(212,165,116,0.05) 0%, transparent 50%);
+    }
+
+    .poem-lines {
+      max-width: 700px;
+    }
+
+    .poem-line {
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      font-weight: 300;
+      line-height: 2.2;
+      color: var(--cream);
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .poem-line.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .poem-line em {
+      color: var(--warm-gold);
+      font-style: italic;
+    }
+
+    /* ─── 3D MODEL SECTION ─── */
+    #model-section {
+      flex-direction: column;
+      text-align: center;
+      position: relative;
+      background: radial-gradient(ellipse at 50% 60%, rgba(212,165,116,0.06) 0%, transparent 50%);
+    }
+
+    #model-viewer-container {
+      width: min(700px, 88vw);
+      height: min(520px, 65vh);
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: url('./bg-nature.jpg') center/cover no-repeat;
+      box-shadow:
+        0 0 80px rgba(212,165,116,0.15),
+        0 4px 30px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    #model-viewer-container::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.15) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    #model-viewer-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    #model-viewer-canvas:active {
+      cursor: grabbing;
+    }
+
+    .model-interact-hint {
+      position: absolute;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(80,50,30,0.5);
+      text-shadow: 0 1px 3px rgba(255,255,255,0.4);
+      z-index: 2;
+      pointer-events: none;
+      animation: fadeRise 2s ease-out 1s forwards;
+      opacity: 0;
+    }
+
+    .model-label {
+      margin-top: 1.8rem;
+      font-size: 1.05rem;
+      font-style: italic;
+      color: var(--soft-amber);
+      opacity: 0;
+      transition: opacity 1s ease;
+      letter-spacing: 0.03em;
+    }
+
+    .model-label.visible { opacity: 0.85; }
+
+    /* ─── GALLERY ─── */
+    #gallery {
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .gallery-title {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 300;
+      color: var(--warm-gold);
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+
+    .gallery-grid {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 1100px;
+    }
+
+    .gallery-card {
+      position: relative;
+      width: min(450px, 85vw);
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 8px 60px rgba(0,0,0,0.5);
+      opacity: 0;
+      transform: scale(0.95);
+      transition: all 1s ease;
+    }
+
+    .gallery-card.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .gallery-card img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      filter: sepia(0.15) brightness(0.9);
+      transition: transform 0.6s ease, filter 0.6s ease;
+    }
+
+    .gallery-card:hover img {
+      transform: scale(1.05);
+      filter: sepia(0) brightness(1);
+    }
+
+    .gallery-card .card-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 1.5rem;
+      background: linear-gradient(to top, rgba(26,14,8,0.9), transparent);
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: 0.95rem;
+      color: var(--whisper);
+    }
+
+    .gallery-card-square {
+      width: min(350px, 85vw);
+      aspect-ratio: 1/1;
+    }
+
+    /* ─── TRIBUTE SECTION ─── */
+    #tribute {
+      flex-direction: column;
+      text-align: center;
+      gap: 2rem;
+      background: radial-gradient(ellipse at 50% 50%, rgba(212,165,116,0.06) 0%, transparent 50%);
+    }
+
+    .tribute-text {
+      max-width: 650px;
+      font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+      font-weight: 300;
+      line-height: 2;
+      color: var(--cream);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 1.5s ease;
+    }
+
+    .tribute-text.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tribute-text strong {
+      color: var(--warm-gold);
+      font-weight: 400;
+    }
+
+    /* ─── SOUND TOGGLE ─── */
+    #sound-toggle {
+      position: fixed;
+      top: 1.2rem;
+      right: 1.2rem;
+      z-index: 100;
+      background: rgba(26,14,8,0.6);
+      border: 1px solid rgba(212,165,116,0.3);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--warm-gold);
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+      opacity: 0.7;
+    }
+
+    #sound-toggle:hover {
+      opacity: 1;
+      border-color: var(--warm-gold);
+      background: rgba(26,14,8,0.8);
+    }
+
+    /* ─── MOSAIC SECTION ─── */
+    #mosaic {
+      flex-direction: column;
+      text-align: center;
+      gap: 2rem;
+      padding: 4rem 2rem;
+      min-height: auto;
+      background: radial-gradient(ellipse at 50% 50%, rgba(212,165,116,0.06) 0%, transparent 50%);
+    }
+
+    .mosaic-title {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 300;
+      color: var(--warm-gold);
+      letter-spacing: 0.08em;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 1.2s ease;
+    }
+
+    .mosaic-title.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .mosaic-subtitle {
+      font-family: 'Lora', serif;
+      font-style: italic;
+      font-size: clamp(0.95rem, 2vw, 1.2rem);
+      color: var(--soft-amber);
+      opacity: 0;
+      transform: translateY(15px);
+      transition: all 1.2s ease 0.3s;
+      margin-top: -0.5rem;
+    }
+
+    .mosaic-subtitle.visible {
+      opacity: 0.8;
+      transform: translateY(0);
+    }
+
+    .mosaic-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      max-width: 750px;
+      width: 90vw;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 600px) {
+      .mosaic-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .mosaic-tile {
+      position: relative;
+      aspect-ratio: 1/1;
+      border-radius: 10px;
+      overflow: hidden;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .mosaic-tile.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .mosaic-tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.9) saturate(0.9);
+      transition: transform 0.6s ease, filter 0.6s ease;
+    }
+
+    .mosaic-tile:hover img {
+      transform: scale(1.08);
+      filter: brightness(1) saturate(1);
+    }
+
+
+    /* ─── FINAL FLAME SECTION ─── */
+    #final-flame {
+      flex-direction: column;
+      text-align: center;
+      min-height: 60vh;
+      background: radial-gradient(ellipse at 50% 50%, rgba(212,165,116,0.08) 0%, transparent 40%);
+    }
+
+    .final-words {
+      max-width: 650px;
+    }
+
+    /* ─── FLOATING PARTICLES (CSS) ─── */
+    .particle {
+      position: fixed;
+      width: 2px; height: 2px;
+      background: var(--warm-gold);
+      border-radius: 50%;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 2;
+      animation: floatParticle linear infinite;
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeRise {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes floatParticle {
+      0% { opacity: 0; transform: translateY(100vh) scale(0); }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { opacity: 0; transform: translateY(-10vh) scale(1); }
+    }
+
+    /* ─── LOADING OVERLAY ─── */
+    #loading {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: var(--deep-shadow);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 1.5s ease;
+    }
+
+    body.is-loading {
+      overflow: hidden !important;
+    }
+
+    #loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #loading h2 {
+      font-weight: 300;
+      font-size: 1.5rem;
+      color: var(--warm-gold);
+      letter-spacing: 0.2em;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .loading-flame {
+      width: 30px; height: 50px;
+      background: radial-gradient(ellipse at 50% 90%, var(--warm-gold), transparent 70%);
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      animation: flicker 1.5s ease-in-out infinite alternate;
+      margin-bottom: 2rem;
+    }
+
+    @keyframes flicker {
+      0% { transform: scaleY(1) scaleX(1); opacity: 0.8; }
+      50% { transform: scaleY(1.15) scaleX(0.9); opacity: 1; }
+      100% { transform: scaleY(0.95) scaleX(1.05); opacity: 0.7; }
+    }
+  </style>
+</head>
+<body class="is-loading">
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="loading-flame"></div>
+    <h2>Silent Flames</h2>
+  </div>
+
+  <!-- Three.js Background -->
+  <canvas id="three-canvas"></canvas>
+
+  <!-- Floating particles -->
+  <div id="particles"></div>
+
+  <!-- ═══ HERO ═══ -->
+  <!-- Sound toggle -->
+  <button id="sound-toggle" aria-label="Toggle ambient sound">
+    <svg id="sound-on-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" style="display:none;">
+      <path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07"/><path d="M19.07 4.93a10 10 0 010 14.14"/>
+    </svg>
+    <svg id="sound-off-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+    </svg>
+  </button>
+
+  <section id="hero">
+    <h1>Silent Flames</h1>
+    <p class="subtitle">For the hands that build worlds no one sees</p>
+    <div class="scroll-hint">Scroll to witness</div>
+  </section>
+
+  <!-- ═══ POEM ═══ -->
+  <section id="poem">
+    <div class="poem-lines">
+      <p class="poem-line">She folds the world into <em>neat corners</em>,</p>
+      <p class="poem-line">her fingerprints on every triumph <em>that bears another's name</em>.</p>
+      <p class="poem-line">The kitchen light knows her vigil —</p>
+      <p class="poem-line">a flame that never asks to be <em>seen</em>,</p>
+      <p class="poem-line">only to keep the darkness <em>at bay</em>.</p>
+      <p class="poem-line">She is the <em>architecture</em> of someone else's sky.</p>
+    </div>
+  </section>
+
+  <!-- ═══ 3D MODEL ═══ -->
+  <section id="model-section">
+    <h2 style="font-weight:300; font-size:clamp(1.3rem,3vw,2rem); color:var(--warm-gold); letter-spacing:0.1em; margin-bottom:1.5rem;">
+      Shaped in Silence
+    </h2>
+    <div id="model-viewer-container">
+      <canvas id="model-viewer-canvas" tabindex="-1"></canvas>
+      <div class="model-interact-hint">drag to orbit</div>
+    </div>
+    <p class="model-label">A mother and child — inspired by the silent strength of millions</p>
+  </section>
+
+  <!-- ═══ GALLERY ═══ -->
+  <section id="gallery">
+    <h2 class="gallery-title">Visions from the Shadows</h2>
+    <div class="gallery-grid">
+      <div class="gallery-card" id="card1">
+        <img id="img1" src="https://assets.meshy.ai/e0534be4-3bfe-4062-9d22-838cbd65f67a/uploads/image_019d2226-9090-7ae5-b1a3-4423995e8150_0.png?Expires=1774653670&Signature=SunEjeK~OIuPyUGyX~rxY1iqn4MhysoXZ4ujJs8nEXCFfmRb9A81T3aSxFvgBZ~PSgCmG0164R48sK3n1CPo2vnr8hoQkPs1NY-KG2X4gNJUd2dPrv8sL2QqQu~hC6bg7j7cyP6hXTQLVRU7s9BlvgJO30pIwSWlqJwTGqAECrmKoRfYbGyC6K0ry652~pD7l-T8X9-sSXU8uDI3cxjJtMS16m1YOpidmm8x5kCyHe12vhzM6-H971s~fvB0Ub5HmLgkSuPmO14h735v5TSPZYnLvbsVqwF4hLeXV9D2wQy7Tvbnv~bXQ79WLEMBCXGwHiM-sUlgQ0h0czTm6SECrA__&Key-Pair-Id=KL5I0C8H7HX83" alt="Wings of Shadow" />
+        <div class="card-overlay">"Her shadow grew wings the world never noticed"</div>
+      </div>
+      <div class="gallery-card gallery-card-square" id="card2">
+        <img id="img2" src="https://assets.meshy.ai/e0534be4-3bfe-4062-9d22-838cbd65f67a/uploads/image_019d2226-98e6-7a24-8591-ced3dad95412_0.png?Expires=1774653674&Signature=r-rfPr5H5VgVjztsQ2Lx9XfX4-UgsMw6rpgFTRmvUvH5onFRqQliBSUmPfI09gfqgtDw8FkSLB~5ICMW2957nOTzsHfa5s2KXV-OEkdYCXq2bxnv7ntBbfTwsvJIkpZ-CITg-fIbGv2F-MUTHkdsZtC~qFcb21cU28qIL0H1oiQY8rfXkS1FdaA0SiTjq7DVxRfWL6ZLv5PbE~OCR9s7P5yhOH5BcViN03PNfdSppJqZW6YFRjniZlEic3btQXhEapEq29eNpfQL-M-REpaR-L5RszYCKCe8vPYJDAX4BJlHfgmrXYyKObp1CG4GHwNtmJq~pNw0qAGEubmitIl7xA__&Key-Pair-Id=KL5I0C8H7HX83" alt="Golden Devotion" />
+        <div class="card-overlay">"Quiet devotion glows brighter than any spotlight"</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TRIBUTE ═══ -->
+  <section id="tribute">
+    <h2 style="font-weight:300; font-size:clamp(1.8rem,5vw,3.5rem); color:var(--warm-gold); letter-spacing:0.15em;">
+      To Her
+    </h2>
+    <p class="tribute-text">
+      Behind every headline, every promotion, every standing ovation —<br>
+      there are <strong>hands that ironed the shirt</strong>,<br>
+      <strong>eyes that stayed open</strong> so others could rest,<br>
+      and a <strong>heart that chose silence</strong> over applause.
+    </p>
+    <p class="tribute-text">
+      This is not about being <strong>lesser</strong>.<br>
+      This is about being the <strong>foundation</strong><br>
+      that never needed its name on the building.
+    </p>
+  </section>
+
+  <!-- ═══ MOSAIC ═══ -->
+  <section id="mosaic">
+    <h2 class="mosaic-title">Every Face. Every Home. Every Sacrifice.</h2>
+    <p class="mosaic-subtitle">Across every continent, in every culture — she is there.</p>
+    <div class="mosaic-grid">
+      <div class="mosaic-tile" data-label="Africa">
+        <img src="https://assets.meshy.ai/e0534be4-3bfe-4062-9d22-838cbd65f67a/uploads/image_019d224e-a336-7ad5-9e33-48394eaf693b_0.png?Expires=1774656361&Signature=d05~p2ZLM5VAxRBkacHlt4xRj6YT7k1QAdvaiXlL181OYy6Zi9k~ke0qLqawqsVGk2H5cIeRiospO9m3eSTnJW5CyPFhFZcW9Cn4NksCmVbP~-Uh0NWKbKdPJChc~viYJBz5GxZnnYfK9UnMZwRg~BDRXYEUvDtXlySNbdx4gKWfzbf0v6hFSYZgIK863MT5ttxfzJ1m4deBwZcb-gLUbA19ZqIOJsqcKFw2LL~0GPOxMW0w9pqMeU0QoKlgaG99r3RP6-HLX23EHKNlb1PA5UeUZyRfcNUkCKJCA9-fwHlqeb0pJ-9RNomgih7WlCid43Sf7o5wjBZ9cogIhFHeoA__&Key-Pair-Id=KL5I0C8H7HX83" alt="African woman" />
+
+      </div>
+      <div class="mosaic-tile" data-label="South Asia">
+        <img src="https://assets.meshy.ai/e0534be4-3bfe-4062-9d22-838cbd65f67a/uploads/image_019d224e-a350-7a08-9666-508352ca7616_0.png?Expires=1774656300&Signature=nJt70PKw7uePfBV-XaqgnoUzlJTAJhzSI~eLe5uZoRiFxWcx6-zLjWOaUHRlLByHTSJdcwX3GSoyizEl42ntZsqg-49jOzWq4q88M3tktEqRiKh2Q0fk3TlLMcL9jEqMC190O7JvXWE4rFmoqZGTZUdv4iPgsN0N8jtN1FmmEB6I8a6eQZ7SsIJhQB8zRB821U5Y09DrWqMrZN~GirAoSreGLBFXZiDmJ91xLHNwBh7ZanCHxkX6pooyt1QPDUz9jzGV1dN~R7SFydAAVba-~lDhaet6tQ2VucnDk1PrYU3KVd6lbv9pJo6bALUToC6F75rg6cKBFZU2pKkXKauDgA__&Key-Pair-Id=KL5I0C8H7HX83" alt="South Asian woman" />
+
+      </div>
+      <div class="mosaic-tile" data-label="East Asia">
+        <img src="https://assets.meshy.ai/e0534be4-3bfe-4062-9d22-838cbd65f67a/uploads/image_019d224e-a358-72ec-b20e-5ca8529f2fb2_0.png?Expires=1774656300&Signature=SQcWBfdMs8u5oe6TJS4-pu8UEmT-lWcYJYtl1pf9ju2E2x~qEPVUPAdPQNB-sfNnOO4yXdcSIrJ9H5D26dOGTrT0pP0hHvajet3NAMHyB5T5zxsN-vTulvJQW0oT0RKaZRPRZ1Ylz0OtvrySixVm0UH-vJGwyVrblTjK8vut2gWBPVBuqMNTbmw64tYmtA06L6gzua5fgGlYC1Ty0nSkGZadKz8KKtpm9kiX-rsxJDaxGBfM2D9VDpoAHQPlHq-Ja4UqM3yX-3UqGIJd3yd-xNQmsKJuDJuNZuW-kamzqBv~QAlJtouyCOdg6W7QjCbcyAhnViF80WhAqeeYif3ZUw__&Key-Pair-Id=KL5I0C8H7HX83" alt="East Asian woman" />
+
+      </div>
+      <div class="mosaic-tile" data-label="Latin America">
+        <img src="https://assets.meshy.ai/e0534be4-3bfe-4062-9d22-838cbd65f67a/uploads/image_019d224e-a377-7b75-a8e3-0ec630424461_0.png?Expires=1774656300&Signature=PY-FhkwIKEZssN0COOiQH2WWhnGBCkYkKC7N4csZZsSqXEJfqkh5mWBsQRvuh4nvZ-EVmO9M8uX-X~XcRO~WMFIzHWXoUxYjZdLllvlyj-OFXEWzYwDe1TTjR9l0lEvQr5OrMwwzncTXe3JxscrPrlRYTNsQctYlF24hdvbjZPU5zmeVs9Srz55UNhddzJfYDBhehapUNapjBzSvQO2tUgl6VuNNSunoAVGvffz4MJQc2scKENtC2tys0GQY-wS01o4lleyaq8wddkRm5B-wV6qz-btbdCZYkwegeJxX2kM4WjcJ3FaHwF28JLMjgGoPRBOTIIerj0XK5WyIjZrJmg__&Key-Pair-Id=KL5I0C8H7HX83" alt="Latina woman" />
+
+      </div>
+      <div class="mosaic-tile" data-label="Middle East">
+        <img src="https://assets.meshy.ai/e0534be4-3bfe-4062-9d22-838cbd65f67a/uploads/image_019d224e-a3f3-7a08-8f73-ecdd3f39dbbb_0.png?Expires=1774656300&Signature=fewyJ-z8ssYkZza~xNz7GGjbZh3JJ~DvYRPEe1aMIDZFixGiUX-ISX~dH1QNEVQpREbULbqXXSDlsoktDeW0eNjFN-JLBwI4uhx8Zji6sWRtrXV4dkFqMkOJOJyMCfbXwK3FnU2bWWhgqelNuMW~1wgJUxGqnzL9Pk96mZl-KTVr956ww6Hv3xbFWO3SD2KQG2zxMN3mnUoxK0hNMPuxBX5d3A~I4NrhJBqvy6407JyNYxoHY~1VIRYgd02Gl9nIbOCzDO5k~V0gtYMDKZeze2lPDE1aa1WKImM~WPC86ZoKjO~X3Owoxw33geXfDjL6IOciO-v5JFdeh7WteG~fQg__&Key-Pair-Id=KL5I0C8H7HX83" alt="Middle Eastern woman" />
+
+      </div>
+      <div class="mosaic-tile" data-label="Europe">
+        <img src="https://assets.meshy.ai/e0534be4-3bfe-4062-9d22-838cbd65f67a/uploads/image_019d2254-2b3d-7aab-803f-2660ce123c77_0.png?Expires=1774656655&Signature=XzVXiG2T6l2oMsdnOi9vpE~sLUmu5bA0yfNYlPftt4b7CYT0P1T6Toy-0AYxmceRCIoa55zqggCE4DOBBaDL~W6HIlnyPMcS4K2Zo6gVrAlTMtJi6BBTlS6q-UOM2aQyHPXtQU4N0ioq6QpN2a91ceClAHPUYmKF4c0I8jWO7mnYcZ2aI0a2EoM2TIjjRAZbVAjtmoENDE8po8G23lx1J2w2mkidFxVgFHrxZkXZWRVFiqOlMohAk6~HQJ7DEzmPmWq6cJnj~hbnX8qqPsVQ62-LOyzCAA0MTq87dt6zi4GOgiDUPAISZOW0QaYuoM5Vf3rGPXwRyENICVAvtd2lOw__&Key-Pair-Id=KL5I0C8H7HX83" alt="European woman" />
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FINAL FLAME ═══ -->
+  <section id="final-flame">
+    <p class="tribute-text final-words" style="font-style:italic; color:var(--soft-amber); font-size:clamp(1.3rem,3vw,2rem);">
+      You are the silent flame.<br>
+      And the world is warm because of you.
+    </p>
+  </section>
+
+  <!-- ═══ SCRIPTS ═══ -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // ─── CONFIG ───
+    const MESHY_API_KEY = 'msy_mVvAg38rl4CIKew6O0dmBUx5k8wIO8W1BO2g';
+    const MODEL_TASK_ID = '019d2226-81f1-7ae5-80a3-24a228a3c2c5';
+    const IMAGE1_TASK_ID = '019d2226-9090-7ae5-b1a3-4423995e8150';
+    const IMAGE2_TASK_ID = '019d2226-98e6-7a24-8591-ced3dad95412';
+
+    // ─── BACKGROUND SCENE (Shadow + Light particles) ───
+    const bgCanvas = document.getElementById('three-canvas');
+    const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, alpha: true, antialias: true });
+    bgRenderer.setSize(window.innerWidth, window.innerHeight);
+    bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const bgScene = new THREE.Scene();
+    const bgCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    bgCamera.position.z = 5;
+
+    // Shadow particles — representing silent, unseen work
+    const particleCount = 800;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+    const velocities = [];
+
+    const goldColor = new THREE.Color(0xD4A574);
+    const shadowColor = new THREE.Color(0x3D2214);
+
+    for (let i = 0; i < particleCount; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 15;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 15;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+
+      const mix = Math.random();
+      const c = goldColor.clone().lerp(shadowColor, mix);
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+
+      sizes[i] = Math.random() * 1.5 + 0.3;
+      velocities.push({
+        x: (Math.random() - 0.5) * 0.003,
+        y: Math.random() * 0.005 + 0.002,
+        z: (Math.random() - 0.5) * 0.002
+      });
+    }
+
+    const particleGeo = new THREE.BufferGeometry();
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    particleGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const particleMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        varying float vAlpha;
+        uniform float uTime;
+        uniform float uScroll;
+        void main() {
+          vColor = color;
+          vec3 pos = position;
+          pos.y += sin(uTime * 0.5 + position.x * 2.0) * 0.3;
+          pos.x += cos(uTime * 0.3 + position.z) * 0.2;
+          float dist = length(pos.xy);
+          vAlpha = smoothstep(8.0, 2.0, dist) * (0.15 + 0.35 * sin(uTime + position.x * 3.0) * 0.5 + 0.5);
+          vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+          gl_PointSize = size * (200.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        varying float vAlpha;
+        void main() {
+          float d = length(gl_PointCoord - vec2(0.5));
+          if (d > 0.5) discard;
+          float alpha = vAlpha * smoothstep(0.5, 0.0, d);
+          gl_FragColor = vec4(vColor, alpha);
+        }
+      `,
+      uniforms: {
+        uTime: { value: 0 },
+        uScroll: { value: 0 }
+      },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
+    const particles = new THREE.Points(particleGeo, particleMat);
+    bgScene.add(particles);
+
+    // ─── Flame light at center (her silent flame) ───
+    const flameGeo = new THREE.SphereGeometry(0.15, 16, 16);
+    const flameMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        varying vec3 vPos;
+        void main() {
+          vPos = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        varying vec3 vPos;
+        void main() {
+          float glow = 1.0 - length(vPos) * 5.0;
+          glow = pow(max(glow, 0.0), 1.5);
+          vec3 col = mix(vec3(0.83, 0.65, 0.45), vec3(1.0, 0.85, 0.6), glow);
+          float flicker = 0.85 + 0.15 * sin(uTime * 8.0) * cos(uTime * 5.0);
+          gl_FragColor = vec4(col * flicker, glow * 0.9);
+        }
+      `,
+      uniforms: { uTime: { value: 0 } },
+      transparent: true,
+      blending: THREE.AdditiveBlending
+    });
+    const flame = new THREE.Mesh(flameGeo, flameMat);
+    flame.position.set(0, -1.5, 0);
+    bgScene.add(flame);
+
+    // Glow sprite around flame
+    const glowTex = createGlowTexture();
+    const glowMat = new THREE.SpriteMaterial({
+      map: glowTex, color: 0xD4A574, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending
+    });
+    const glowSprite = new THREE.Sprite(glowMat);
+    glowSprite.scale.set(4, 4, 1);
+    glowSprite.position.copy(flame.position);
+    bgScene.add(glowSprite);
+
+    function createGlowTexture() {
+      const size = 256;
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.3, 'rgba(212,165,116,0.6)');
+      grad.addColorStop(1, 'rgba(212,165,116,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,size,size);
+      return new THREE.CanvasTexture(c);
+    }
+
+    // ─── 3D MODEL VIEWER ───
+    const modelCanvas = document.getElementById('model-viewer-canvas');
+    const modelRenderer = new THREE.WebGLRenderer({ canvas: modelCanvas, alpha: true, antialias: true });
+    const modelContainer = document.getElementById('model-viewer-container');
+    modelRenderer.setSize(modelContainer.clientWidth, modelContainer.clientHeight);
+    modelRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    modelRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    modelRenderer.toneMappingExposure = 1.6;
+    modelRenderer.setClearColor(0x000000, 0);
+
+    const modelScene = new THREE.Scene();
+
+    const modelCamera = new THREE.PerspectiveCamera(40, modelContainer.clientWidth / modelContainer.clientHeight, 0.1, 100);
+    modelCamera.position.set(0, 1.4, 3.5);
+    modelCamera.lookAt(0, 0.8, 0);
+
+    // ── Natural golden hour lighting ──
+    const ambientLight = new THREE.AmbientLight(0xFFF5E6, 1.8);
+    modelScene.add(ambientLight);
+
+    // Sunlight — warm golden from upper right (like afternoon sun)
+    const keyLight = new THREE.DirectionalLight(0xFFD699, 3.5);
+    keyLight.position.set(3, 5, 2);
+    modelScene.add(keyLight);
+
+    // Sky fill — soft blue from above
+    const skyLight = new THREE.HemisphereLight(0x87CEEB, 0xD4A574, 0.8);
+    modelScene.add(skyLight);
+
+    // Rim light — warm backlight for glow edge
+    const rimLight = new THREE.DirectionalLight(0xFFBB77, 2.0);
+    rimLight.position.set(-2, 2, -3);
+    modelScene.add(rimLight);
+
+    // Fill light — soft front
+    const fillLight = new THREE.PointLight(0xFFF0DD, 1.2, 10);
+    fillLight.position.set(0, 1.0, 3.5);
+    modelScene.add(fillLight);
+
+    // Subtle warm under-glow (ground bounce)
+    const underLight = new THREE.PointLight(0xD4A574, 0.5, 4);
+    underLight.position.set(0, -0.2, 0);
+    modelScene.add(underLight);
+
+    // ── Soft light ring on ground (sun halo) ──
+    const ringGeo = new THREE.RingGeometry(0.8, 1.3, 64);
+    const ringMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        varying vec2 vUv;
+        void main() {
+          float alpha = smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.7, vUv.x);
+          alpha *= 0.15 + 0.05 * sin(uTime * 1.5 + vUv.y * 15.0);
+          vec3 col = mix(vec3(1.0, 0.92, 0.75), vec3(1.0, 0.98, 0.9), vUv.x);
+          gl_FragColor = vec4(col, alpha * 0.35);
+        }
+      `,
+      uniforms: { uTime: { value: 0 } },
+      transparent: true,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const groundRing = new THREE.Mesh(ringGeo, ringMat);
+    groundRing.rotation.x = -Math.PI / 2;
+    groundRing.position.y = 0.01;
+    modelScene.add(groundRing);
+
+    // ── Soft shadow beneath figure ──
+    const groundGeo = new THREE.CircleGeometry(1.5, 64);
+    const groundMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec2 vUv;
+        void main() {
+          float dist = length(vUv - 0.5) * 2.0;
+          float alpha = smoothstep(1.0, 0.0, dist) * 0.25;
+          gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+        }
+      `,
+      transparent: true,
+      side: THREE.DoubleSide
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0.0;
+    modelScene.add(ground);
+
+    // ── Dust motes inside the viewer ──
+    const dustCount = 60;
+    const dustPos = new Float32Array(dustCount * 3);
+    const dustSizes = new Float32Array(dustCount);
+    for (let i = 0; i < dustCount; i++) {
+      dustPos[i*3] = (Math.random() - 0.5) * 4;
+      dustPos[i*3+1] = Math.random() * 3;
+      dustPos[i*3+2] = (Math.random() - 0.5) * 4;
+      dustSizes[i] = Math.random() * 2 + 0.5;
+    }
+    const dustGeo = new THREE.BufferGeometry();
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+    dustGeo.setAttribute('size', new THREE.BufferAttribute(dustSizes, 1));
+    const dustMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute float size;
+        uniform float uTime;
+        varying float vAlpha;
+        void main() {
+          vec3 pos = position;
+          pos.y = mod(pos.y + uTime * 0.08, 3.0);
+          pos.x += sin(uTime * 0.5 + position.z * 2.0) * 0.1;
+          vAlpha = smoothstep(0.0, 0.5, pos.y) * smoothstep(3.0, 2.0, pos.y) * 0.4;
+          vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+          gl_PointSize = size * (150.0 / -mv.z);
+          gl_Position = projectionMatrix * mv;
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+        void main() {
+          float d = length(gl_PointCoord - 0.5);
+          if (d > 0.5) discard;
+          float alpha = vAlpha * smoothstep(0.5, 0.0, d);
+          gl_FragColor = vec4(1.0, 0.95, 0.8, alpha);
+        }
+      `,
+      uniforms: { uTime: { value: 0 } },
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const dustParticles = new THREE.Points(dustGeo, dustMat);
+    modelScene.add(dustParticles);
+
+    const controls = new OrbitControls(modelCamera, modelCanvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.8;
+    controls.target.set(0, 0.8, 0);
+    controls.maxPolarAngle = Math.PI * 0.65;
+    controls.minPolarAngle = Math.PI * 0.25;
+    controls.enableZoom = false;
+    controls.enablePan = false;
+
+    // placeholder silhouette while model loads
+    const silhouetteGeo = new THREE.CylinderGeometry(0.15, 0.3, 1.6, 12);
+    const silhouetteMat = new THREE.MeshStandardMaterial({
+      color: 0x3D2214, roughness: 0.8, metalness: 0.05, emissive: 0x1a0e08, emissiveIntensity: 0.3
+    });
+    const silhouette = new THREE.Mesh(silhouetteGeo, silhouetteMat);
+    silhouette.position.y = 0.8;
+    modelScene.add(silhouette);
+
+    const headGeo = new THREE.SphereGeometry(0.18, 16, 16);
+    const head = new THREE.Mesh(headGeo, silhouetteMat);
+    head.position.y = 1.78;
+    modelScene.add(head);
+
+    // ─── LOAD MESHY ASSETS ───
+    let modelLoaded = false;
+    const GLB_URL = './model.glb';
+
+    // Load 3D model
+    async function loadModel() {
+        const loader = new GLTFLoader();
+        loader.load(GLB_URL, (gltf) => {
+          // Remove placeholder
+          modelScene.remove(silhouette);
+          modelScene.remove(head);
+
+          const model = gltf.scene;
+          // Center and scale
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const scale = 2.0 / maxDim;
+          model.scale.setScalar(scale);
+          model.position.sub(center.multiplyScalar(scale));
+          model.position.y -= (box.min.y * scale);
+
+          // Keep original textures, reduce shininess for natural matte look
+          model.traverse((child) => {
+            if (child.isMesh && child.material) {
+              const mat = child.material;
+              mat.roughness = Math.max(mat.roughness || 0.8, 0.85);
+              mat.metalness = Math.min(mat.metalness || 0, 0.05);
+              mat.emissive = new THREE.Color(0x1a0e08);
+              mat.emissiveIntensity = 0.08;
+              mat.envMapIntensity = 0.1;
+              mat.needsUpdate = true;
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          modelScene.add(model);
+          modelLoaded = true;
+          console.log('3D model loaded successfully');
+        }, undefined, (err) => console.error('GLTF load error:', err));
+    }
+
+    // Start loading
+    loadModel();
+
+    // ─── CSS FLOATING PARTICLES ───
+    const particlesContainer = document.getElementById('particles');
+    for (let i = 0; i < 25; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.animationDuration = (8 + Math.random() * 15) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      p.style.width = p.style.height = (1 + Math.random() * 3) + 'px';
+      particlesContainer.appendChild(p);
+    }
+
+    // ─── SCROLL ANIMATIONS ───
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      });
+    }, { threshold: 0.3 });
+
+    document.querySelectorAll('.poem-line, .gallery-card, .tribute-text, .model-label, .mosaic-title, .mosaic-subtitle, .final-words').forEach(el => {
+      observer.observe(el);
+    });
+
+    // Stagger poem lines
+    const poemLines = document.querySelectorAll('.poem-line');
+    const poemObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const idx = Array.from(poemLines).indexOf(e.target);
+          setTimeout(() => e.target.classList.add('visible'), idx * 400);
+        }
+      });
+    }, { threshold: 0.2 });
+    poemLines.forEach(el => poemObserver.observe(el));
+
+    // Stagger mosaic tiles
+    const mosaicTiles = document.querySelectorAll('.mosaic-tile');
+    const mosaicObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const idx = Array.from(mosaicTiles).indexOf(e.target);
+          setTimeout(() => e.target.classList.add('visible'), idx * 200);
+        }
+      });
+    }, { threshold: 0.15 });
+    mosaicTiles.forEach(el => mosaicObserver.observe(el));
+
+    // ─── ANIMATION LOOP ───
+    const clock = new THREE.Clock();
+    let scrollY = 0;
+
+    window.addEventListener('scroll', () => {
+      scrollY = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+
+      // Background particles
+      particleMat.uniforms.uTime.value = t;
+      particleMat.uniforms.uScroll.value = scrollY;
+      particles.rotation.y = t * 0.02;
+      particles.position.y = -scrollY * 3;
+
+      // Flame
+      flameMat.uniforms.uTime.value = t;
+      flame.scale.y = 1 + Math.sin(t * 6) * 0.1;
+      glowSprite.material.opacity = 0.15 + Math.sin(t * 4) * 0.05;
+      glowSprite.position.copy(flame.position);
+
+      bgRenderer.render(bgScene, bgCamera);
+
+      // Model viewer
+      controls.update();
+      ringMat.uniforms.uTime.value = t;
+      dustMat.uniforms.uTime.value = t;
+      underLight.intensity = 0.3 + Math.sin(t * 3) * 0.1;
+      modelRenderer.render(modelScene, modelCamera);
+    }
+
+    // ─── LOADING SCREEN & SCROLL FIX ───
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('hidden');
+        document.body.classList.remove('is-loading');
+        window.scrollTo(0, 0);
+      }, 2000);
+    });
+
+    // ─── RESIZE ───
+    window.addEventListener('resize', () => {
+      bgCamera.aspect = window.innerWidth / window.innerHeight;
+      bgCamera.updateProjectionMatrix();
+      bgRenderer.setSize(window.innerWidth, window.innerHeight);
+
+      const w = modelContainer.clientWidth;
+      const h = modelContainer.clientHeight;
+      modelCamera.aspect = w / h;
+      modelCamera.updateProjectionMatrix();
+      modelRenderer.setSize(w, h);
+    });
+
+    animate();
+
+    // ─── AMBIENT SOUND ENGINE ───
+    let audioCtx = null;
+    let audioPlaying = false;
+    const soundBtn = document.getElementById('sound-toggle');
+    const soundOnIcon = document.getElementById('sound-on-icon');
+    const soundOffIcon = document.getElementById('sound-off-icon');
+    let masterGain = null;
+    let audioNodes = [];
+
+    function createAmbientSound() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0;
+      masterGain.connect(audioCtx.destination);
+
+      // Warm drone pad — layered sine waves at harmonic intervals
+      const droneFreqs = [110, 165, 220, 330]; // A2, E3, A3, E4
+      droneFreqs.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.value = (i === 0 ? 0.08 : 0.03) / droneFreqs.length;
+
+        // Gentle vibrato
+        const lfo = audioCtx.createOscillator();
+        const lfoGain = audioCtx.createGain();
+        lfo.frequency.value = 0.3 + i * 0.1;
+        lfoGain.gain.value = freq * 0.003;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        lfo.start();
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+        audioNodes.push(osc, lfo);
+      });
+
+      // Soft filtered noise — like a warm breeze
+      const bufferSize = audioCtx.sampleRate * 4;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * 0.5;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = noiseBuffer;
+      noise.loop = true;
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.value = 400;
+      noiseFilter.Q.value = 1;
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.value = 0.015;
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(masterGain);
+      noise.start();
+      audioNodes.push(noise);
+
+      // Gentle chime — periodic soft bell tones
+      function playChime() {
+        if (!audioPlaying || !audioCtx) return;
+        const notes = [523.25, 659.25, 783.99, 880, 1046.5]; // C5, E5, G5, A5, C6
+        const freq = notes[Math.floor(Math.random() * notes.length)];
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.value = 0;
+        gain.gain.setTargetAtTime(0.025 + Math.random() * 0.015, audioCtx.currentTime, 0.1);
+        gain.gain.setTargetAtTime(0, audioCtx.currentTime + 1.5, 1.2);
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 5);
+
+        const next = 3000 + Math.random() * 5000;
+        setTimeout(playChime, next);
+      }
+      setTimeout(playChime, 1500);
+
+      // Fade in
+      masterGain.gain.setTargetAtTime(1, audioCtx.currentTime, 2);
+    }
+
+    function toggleSound() {
+      if (!audioPlaying) {
+        if (!audioCtx) createAmbientSound();
+        else {
+          audioCtx.resume();
+          masterGain.gain.setTargetAtTime(1, audioCtx.currentTime, 1.5);
+        }
+        audioPlaying = true;
+        soundOnIcon.style.display = 'block';
+        soundOffIcon.style.display = 'none';
+      } else {
+        masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 1);
+        setTimeout(() => { if (!audioPlaying) audioCtx.suspend(); }, 2500);
+        audioPlaying = false;
+        soundOnIcon.style.display = 'none';
+        soundOffIcon.style.display = 'block';
+      }
+    }
+
+    soundBtn.addEventListener('click', toggleSound);
+  </script>
+</body>
+</html>

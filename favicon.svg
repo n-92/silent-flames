@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="70%" r="50%">
+      <stop offset="0%" stop-color="#D4A574" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#1a0e08" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="flame" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#C8956C"/>
+      <stop offset="40%" stop-color="#D4A574"/>
+      <stop offset="100%" stop-color="#F5E6D3"/>
+    </linearGradient>
+    <linearGradient id="innerFlame" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#C8956C" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#F5E6D3" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="31" fill="#1a0e08"/>
+  <circle cx="32" cy="32" r="31" fill="url(#glow)"/>
+
+  <!-- Outer flame shape — gentle, like a quiet candle -->
+  <path d="
+    M 32 8
+    C 34 16, 44 22, 44 34
+    C 44 42, 38 50, 32 52
+    C 26 50, 20 42, 20 34
+    C 20 22, 30 16, 32 8
+    Z
+  " fill="url(#flame)" opacity="0.85"/>
+
+  <!-- Inner flame — the silent core -->
+  <path d="
+    M 32 20
+    C 33 26, 38 30, 38 36
+    C 38 41, 35 46, 32 47
+    C 29 46, 26 41, 26 36
+    C 26 30, 31 26, 32 20
+    Z
+  " fill="url(#innerFlame)"/>
+
+  <!-- Subtle woman silhouette within the flame -->
+  <path d="
+    M 32 28
+    C 33.5 28, 34.5 29, 34.5 30.5
+    C 34.5 32, 33.5 33, 32 33
+    C 30.5 33, 29.5 32, 29.5 30.5
+    C 29.5 29, 30.5 28, 32 28
+    Z
+    M 32 33.5
+    C 34 33.5, 36 35, 36 37
+    L 36 43
+    C 35 45.5, 33 47, 32 47
+    C 31 47, 29 45.5, 28 43
+    L 28 37
+    C 28 35, 30 33.5, 32 33.5
+    Z
+  " fill="#1a0e08" opacity="0.35"/>
+
+  <!-- Thin ring border -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="#D4A574" stroke-width="0.7" opacity="0.4"/>
+</svg>
